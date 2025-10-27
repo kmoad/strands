@@ -100,11 +100,18 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('puzzle',
         type = Path,
+        help = 'Path to puzzle file',
     )
     parser.add_argument('--words',
         type = Path,
         required = False,
         default = Path('words_easy.txt'),
+        help = 'Path to words file',
+    )
+    parser.add_argument('--show',
+        type = int,
+        default = 10,
+        help = 'Number of words to show',
     )
     args = parser.parse_args()
 
@@ -116,9 +123,13 @@ if __name__ == '__main__':
         puzzle = StrandsPuzzle.from_file(f)
 
     solutions = []
+    all_words = set()
     for i,j in itertools.product(range(0,puzzle._dim[0]), range(0,puzzle._dim[1])):
         coord = (i,j)
-        solutions += puzzle.find_words([coord], pt)
-    solutions.sort(key=lambda _: len(_[0]), reverse=True)
-    for solution in solutions[:10]:
+        for solution in puzzle.find_words([coord], pt):
+            if solution[0] not in all_words:
+                solutions.append(solution)
+                all_words.add(solution[0])
+    solutions.sort(key=lambda _: (len(_[0]), _[1]), reverse=True)
+    for solution in solutions[:args.show]:
         print(solution[0], solution[1][0])
