@@ -58,7 +58,7 @@ class StrandsPuzzle():
     def from_file(cls, f):
         grid = []
         for line in f:
-            grid.append([_.upper() for _ in line.strip()])
+            grid.append([_ for _ in line.strip()])
         return cls(grid)
 
     def neighbors(self, coord):
