@@ -94,11 +94,25 @@ class StrandsPuzzle():
 
 
 if __name__ == '__main__':
-    with open('words_easy.txt') as f:
+    from argparse import ArgumentParser
+    from pathlib import Path
+
+    parser = ArgumentParser()
+    parser.add_argument('puzzle',
+        type = Path,
+    )
+    parser.add_argument('--words',
+        type = Path,
+        required = False,
+        default = Path('words_easy.txt'),
+    )
+    args = parser.parse_args()
+
+    with open(args.words) as f:
         words = [l.strip().upper() for l in f]
     pt = PrefixTree(words)
 
-    with open('puzzle.txt') as f:
+    with open(args.puzzle) as f:
         puzzle = StrandsPuzzle.from_file(f)
 
     solutions = []
@@ -108,5 +122,3 @@ if __name__ == '__main__':
     solutions.sort(key=lambda _: len(_[0]), reverse=True)
     for solution in solutions[:10]:
         print(solution[0], solution[1][0])
-    # for coords, word in puzzle.find_words([(1,0)], pt):
-    #     print(word)
