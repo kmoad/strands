@@ -115,7 +115,7 @@ class StrandsPuzzle():
             grid.append([_ for _ in line.strip()])
         return cls(grid)
 
-    def get_neighbor_coordinates(self, coord: tuple[int,int]) -> list[tuple[int,int]]:
+    def _get_neighbor_coordinates(self, coord: tuple[int,int]) -> list[tuple[int,int]]:
         """
         Get coordinates of grid positions around the current one (adjacent or diagonal)
         """
@@ -140,14 +140,14 @@ class StrandsPuzzle():
         """
         return self._grid[coord[0]][coord[1]]
 
-    def find_words(self, coords: list[tuple[int,int]], prev_pt: PrefixTree) -> tuple[str,list[tuple[int,int]]]:
+    def _find_words(self, coords: list[tuple[int,int]], prev_pt: PrefixTree) -> tuple[str,list[tuple[int,int]]]:
         """
-        Main puzzle solving function.
+        Find words from a position chain.
 
         Arguments:
             coords: The coordinates of the path taken to get to this position,
-                and the coordinate of the current position. This is to avoid
-                using positions more than once in a word.
+                ending with the coordinate of the current position. This is to 
+                avoid using positions more than once in a word.
             prev_pt: The node in the prefix tree up to but not including the
                 current letter. Thus, prev_pt.prefix is the word so far.
         """
@@ -160,20 +160,35 @@ class StrandsPuzzle():
             # Check for complete word
             if cur_pt.is_word:
                 words.append((cur_pt.prefix, coords))
-            # Proceed to check neighboring positions
-            for neighbor_coord in self.get_neighbor_coordinates(cur_coord):
+            # Proceed to neighboring positions
+            for neighbor_coord in self._get_neighbor_coordinates(cur_coord):
                 # Can only use a position once
                 if neighbor_coord in coords:
                     continue
                 # Recur into next position
-                words += self.find_words(coords+[neighbor_coord], cur_pt)
-        return words    
+                words += self._find_words(coords+[neighbor_coord], cur_pt)
+        return words
+    
+    def solve(self, pt: PrefixTree) -> dict[str:list[list[tuple[int,int]]]]:
+        """
+        Find words in PrefixTree that are creatable in this puzzle
+        """
+        solutions = defaultdict(list)
+        # Iterate every location
+        range_x = range(0, self._dim[0])
+        range_y = range(0, self._dim[1])
+        for starting_coord in itertools.product(range_x, range_y):
+            for word, chain in puzzle._find_words([starting_coord], pt):
+                solutions[word].append(chain)
+        return solutions
 
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description = 'Solve NYT Strands puzzles'
+    )
     parser.add_argument('puzzle',
         type = Path,
         help = 'Path to puzzle file',
@@ -193,23 +208,13 @@ if __name__ == '__main__':
 
     all_words = [l.strip().upper() for l in args.words.open()]
     # Words must have more than 3 letters
-    words = filter(lambda _: len(_) > 3, all_words)
+    words = list(filter(lambda _: len(_) > 3, all_words))
     pt = PrefixTree(words)
 
     puzzle = StrandsPuzzle.from_file(args.puzzle)
+    solutions = puzzle.solve(pt)
 
-    solutions = []
-    found_words = set()
-    # Iterate every location
-    for i,j in itertools.product(range(0,puzzle._dim[0]), range(0,puzzle._dim[1])):
-        coord = (i,j)
-        for solution in puzzle.find_words([coord], pt):
-            # Many words have multiple valid paths, especially at start of game
-            if solution[0] not in found_words:
-                solutions.append(solution)
-                found_words.add(solution[0])
-    # Order words longest to shortest
-    solutions.sort(key=lambda _: (len(_[0]), _[1]), reverse=True)
-    # Print some number of words and their starting coordinate
-    for solution in solutions[:args.show]:
-        print(solution[0], solution[1][0])
+    solution_words = list(solutions.keys())
+    solution_words.sort(key=lambda _: len(_), reverse=True)
+    for word in solution_words[:args.show]:
+        print(word, solutions[word][0][0])
