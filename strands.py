@@ -29,7 +29,8 @@ class PrefixTree(object):
     def __init__(self, words: list[str]):
         self.prefix = '' # Root prefix is empty string
         self.is_word = False
-        self.children = defaultdict(lambda: self.__class__([]))
+        self.edges = defaultdict(lambda: self.__class__([]))
+        self._word_count = 0
         for word in words:
             self.add_word(word, depth=0)
 
@@ -42,10 +43,11 @@ class PrefixTree(object):
             n: The current depth of this node
         """
         self.prefix = word[:depth]
+        self._word_count += 1
         if self.prefix == word:
             self.is_word = True
         else:
-            self.children[word[depth]].add_word(word, depth=depth+1)
+            self.edges[word[depth]].add_word(word, depth=depth+1)
     
     def __getitem__(self, prefix: str):
         """
@@ -54,14 +56,14 @@ class PrefixTree(object):
         exist in the tree.
 
         For example, for a prefix tree loaded with common English words.
-        pt['HEL'] returns a sub-tree containing all words starting with HEL
+        pt['TH'] returns a sub-tree containing all words starting with TH
         pt['ZZZWXQK'] raises a KeyError
         """
-        if prefix[0] in self.children:
+        if prefix[0] in self.edges:
             if len(prefix) <= 1:
-                return self.children[prefix[0]]
+                return self.edges[prefix[0]]
             else:
-                return self.children[prefix[0]][prefix[1:]]
+                return self.edges[prefix[0]][prefix[1:]]
         else:
             raise KeyError(prefix)
     
@@ -71,9 +73,9 @@ class PrefixTree(object):
         prefix is a leaf node.
         """
         if len(prefix) <= 1:
-            return prefix in self.children
+            return prefix in self.edges
         else:
-            return prefix[1:] in self.children[prefix[0]]
+            return prefix[1:] in self.edges[prefix[0]]
 
     def get(self, *args):
         """
@@ -90,16 +92,14 @@ class PrefixTree(object):
         """
         if self.is_word:
             yield self
-        for child in self.children.values():
+        for child in self.edges.values():
             yield from child
 
     def __len__(self):
         """
         Count of valid words from this node
         """
-        #TODO prepopulate during self.add
-        n = int(self.is_word)
-        return n + sum([len(_) for _ in self.children.values()])
+        return self._word_count
 
 
 class StrandsPuzzle():
