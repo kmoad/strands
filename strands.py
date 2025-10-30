@@ -31,9 +31,9 @@ class PrefixTree(object):
         self.is_word = False
         self.children = defaultdict(lambda: self.__class__([]))
         for word in words:
-            self.add(word, n=0)
+            self.add_word(word, depth=0)
 
-    def add(self, word: str, n: int = 0):
+    def add_word(self, word: str, depth: int = 0):
         """
         Add a word segment to this node.
 
@@ -41,11 +41,11 @@ class PrefixTree(object):
             word: The complete word being added
             n: The current depth of this node
         """
-        self.prefix = word[:n]
+        self.prefix = word[:depth]
         if self.prefix == word:
             self.is_word = True
         else:
-            self.children[word[n]].add(word, n=n+1)
+            self.children[word[depth]].add_word(word, depth=depth+1)
     
     def __getitem__(self, prefix: str):
         """
